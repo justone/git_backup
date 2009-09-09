@@ -134,29 +134,84 @@ __END__
 
 =head1 NAME
 
-git_backup.pl - Script to backup a site with git to a remote site
+git_backup.pl - Simple git based backups.
 
 =head1 SYNOPSIS
 
- git_backup.pl [options]
+ git_backup.pl [options] --path <path>
 
  Options:
-    --help            brief help message
-    --man             full documentation
+     --path <path>          Root directory to back up.  This is the only
+                            required argument.
+  -c --commit-message <commit message>
+                            Git commit message.  Default value is: 'updated'
+  -r --remote <git remote>  Once any changes are committed, they will be pushed
+                            to this remote.  Default value is: 'backup'
+
+ Database options:
+  -d --database <database>  Database to dump out as part of the backup.  If not
+                            specified, then no database dumping will be done.
+     --mysql-defaults <mysql defaults file>
+     --prefix <prefix>      Database table prefix.  If specified, only tables
+                            with this prefix will be dumped.
+
+ Documentation options:
+     --verbose              Print more details about what the script is doing.
+  -t --test                 Don't actually do anything.  Useful when combined
+                            with --verbose.
+  -h --help                 brief help message
+     --man                  full documentation
 
 =head1 REQUIRED ARGUMENTS
 
- A list of every argument that must appear.  This can be ommitted if
- there are no required args.
-
-=head1 OPTIONS
-
- Every option, what it does and any caveats that they may have.  This
- should also include the required arguments if applicable.
+ The only argument that must appear is --path.  This tells git_backup.pl what
+ directory to process.
 
 =head1 DESCRIPTION
 
- A full description of the application and it's features
+This script implements a simple git based backup system.  Given a git
+repository path, it will commit any changes that happened in that directory and
+then push the changes to a git remote.  Effectively, it does this:
+
+ git add <new or modified files>
+ git rm <deleted files>
+ git commit -m 'updated'
+ git push backup
+
+It does not take care of creating the git repository or the remote clone or the
+git remote configuration.
+
+If there is an associated database to backup, the --database option may be
+used.  If this is passed, tables from that database (optionally filtered by
+--prefix) will be dumped into individual files in a diff-friendly format.
+
+=head1 SETUP
+
+To set up a directory for use with git_backup.pl, follow these steps:
+
+=head2 1. Create the git repostory and add all the files to it.
+
+ $ cd /some/directory
+ $ git init
+ $ git add .
+
+=head2 2. Configure your commit settings in the new repository and make the initial commit.
+
+ $ git config user.name "Your Name"
+ $ git config user.email "your@email.com"
+ $ git commit -m "initial commit"
+
+=head2 3. Create a bare clone and copy it to another location.
+
+ $ cd ..
+ $ git clone --bare directory directory.git
+ $ scp -r directory.git user@domain.com:
+ $ cd directory
+
+=head2 4. Add the git remote configuration and test the push.
+
+ $ git remote add backup user@domain.com:directory.git
+ $ git push backup
 
 =head1 AUTHOR
 
@@ -167,8 +222,8 @@ Nate Jones E<lt>nate@endot.orgE<gt>
 Copyright (c) 2009 by Nate Jones E<lt>nate@endot.orgE<gt>.
 
 This program is free software; you can use, modify, and redistribute it under
-the same terms as Perl 5.10.x itself.
+the Artistic License, version 2.0.
 
-See http://www.perl.com/perl/misc/Artistic.html
+See http://www.opensource.org/licenses/artistic-license-2.0.php
 
 =cut
