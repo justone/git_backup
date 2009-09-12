@@ -57,7 +57,7 @@ if ($conf{'database'}) {
     print "Tables to dump: ".join(",", @table_list).".\n" if $conf{'verbose'};
     foreach my $table (@table_list) {
         print "Dumping $table.\n";
-        run_command("/usr/bin/mysqldump $defaults_file_option --extended-insert=FALSE $conf{'database'} $table > $table.dump.sql", {modifies => 1});
+        run_command("/usr/bin/mysqldump $defaults_file_option --extended-insert=FALSE $conf{'database'} $table | /bin/sed 's/ AUTO_INCREMENT=[0-9]\\+//' > $table.dump.sql", {modifies => 1});
     }
 }
 
