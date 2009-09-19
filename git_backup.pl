@@ -7,19 +7,21 @@ use Getopt::Long;
 use Pod::Usage;
 use YAML qw(Dump);
 
+Getopt::Long::Configure("no_auto_abbrev");
+
 my %options;
 my $opts_ok = GetOptions(
     \%options,
-    'help|?',
+    'help|?|h',
     'man',
-    'path=s',
-    'remote:s',
-    'database:s',
-    'prefix:s',
-    'commit-message:s',
-    'test',
-    'mysql-defaults:s',
-    'verbose',
+    'path|p=s',
+    'remote|r=s',
+    'database|d=s',
+    'prefix|o=s',
+    'commit-message|c=s',
+    'test|t',
+    'mysql-defaults|x=s',
+    'verbose|v',
 );
 
 pod2usage(2) if !$opts_ok;
@@ -141,7 +143,7 @@ git_backup.pl - Simple git based backups.
  git_backup.pl [options] --path <path>
 
  Options:
-     --path <path>          Root directory to back up.  This is the only
+  -p --path <path>          Root directory to back up.  This is the only
                             required argument.
   -c --commit-message <commit message>
                             Git commit message.  Default value is: 'updated'
@@ -151,15 +153,15 @@ git_backup.pl - Simple git based backups.
  Database options:
   -d --database <database>  Database to dump out as part of the backup.  If not
                             specified, then no database dumping will be done.
-     --mysql-defaults <mysql defaults file>
-     --prefix <prefix>      Database table prefix.  If specified, only tables
+  -x --mysql-defaults <mysql defaults file>
+  -o --prefix <prefix>      Database table prefix.  If specified, only tables
                             with this prefix will be dumped.
 
  Documentation options:
-     --verbose              Print more details about what the script is doing.
+  -v --verbose              Print more details about what the script is doing.
   -t --test                 Don't actually do anything.  Useful when combined
                             with --verbose.
-  -h --help                 brief help message
+  -h --help -?              brief help message
      --man                  full documentation
 
 =head1 REQUIRED ARGUMENTS
