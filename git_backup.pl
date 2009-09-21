@@ -17,6 +17,7 @@ my $opts_ok = GetOptions(
     'path|p=s',
     'remote|r=s',
     'database|d=s',
+    'database-dir|f=s',
     'prefix|o=s',
     'commit-message|c=s',
     'test|t',
@@ -37,6 +38,8 @@ pod2usage(2) if !$options{'path'};
 $conf{'remote'} ||= 'backup';
 # default commit message for git
 $conf{'commit-message'} ||= 'updated';
+# default database dir is nothing
+$conf{'database-dir'} ||= '';
 
 my $defaults_file_option = "";
 if ($conf{'mysql-defaults'}) {
@@ -52,6 +55,13 @@ chdir $options{'path'} || die "unable to change to directory $options{'path'}";
 if ($conf{'database'}) {
     print "Database specified, dumping tables.\n";
 
+    if ($conf{'database-dir'} ) {
+        if (! (-e $conf{'database-dir'})) {
+            run_command("/bin/mkdir -p $conf{'database-dir'}", {modifies => 1});
+        }
+        $conf{'database-dir'} .= "/" unless $conf{'database-dir'} =~ /\/$/;
+    }
+
     my @table_list = split(/\n/, run_command("/usr/bin/mysql $defaults_file_option --silent $conf{'database'} -e \"show tables\""));
     if ($conf{'prefix'}) {
         @table_list = grep {/^$conf{'prefix'}/} @table_list;
@@ -59,7 +69,7 @@ if ($conf{'database'}) {
     print "Tables to dump: ".join(",", @table_list).".\n" if $conf{'verbose'};
     foreach my $table (@table_list) {
         print "Dumping $table.\n";
-        run_command("/usr/bin/mysqldump $defaults_file_option --extended-insert=FALSE $conf{'database'} $table | /bin/sed 's/ AUTO_INCREMENT=[0-9]\\+//' > $table.dump.sql", {modifies => 1});
+        run_command("/usr/bin/mysqldump $defaults_file_option --extended-insert=FALSE $conf{'database'} $table | /bin/sed 's/ AUTO_INCREMENT=[0-9]\\+//' > $conf{'database-dir'}$table.dump.sql", {modifies => 1});
     }
 }
 
@@ -153,6 +163,7 @@ git_backup.pl - Simple git based backups.
  Database options:
   -d --database <database>  Database to dump out as part of the backup.  If not
                             specified, then no database dumping will be done.
+  -f --database-dir <dir>   Directory in which to put database backups.
   -x --mysql-defaults <mysql defaults file>
   -o --prefix <prefix>      Database table prefix.  If specified, only tables
                             with this prefix will be dumped.
