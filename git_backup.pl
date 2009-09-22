@@ -130,6 +130,8 @@ sub print_configuration {
     printf " remote: %s\n", $conf{'remote'};
     printf " database: %s\n",
         $conf{'database'} ? $conf{'database'} : '<none specified>';
+    printf " database-dir: %s\n",
+        $conf{'database-dir'} ? $conf{'database-dir'} : '<none specified>';
     printf " prefix: %s\n",
         $conf{'prefix'} ? $conf{'prefix'} : '<none specified>';
     printf " mysql-defaults: %s\n",
