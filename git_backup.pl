@@ -184,6 +184,7 @@ git_backup.pl - Simple git based backups.
                             specified, then no database dumping will be done.
   -f --database-dir <dir>   Directory in which to put database backups.
   -x --mysql-defaults <mysql defaults file>
+                            File containing mysql options.
   -o --prefix <prefix>      Database table prefix.  If specified, only tables
                             with this prefix will be dumped.
 
@@ -211,11 +212,13 @@ then push the changes to a git remote.  Effectively, it does this:
  git push backup
 
 It does not take care of creating the git repository or the remote clone or the
-git remote configuration.
+git remote configuration.  See the SETUP section for that.
 
 If there is an associated database to backup, the --database option may be
 used.  If this is passed, tables from that database (optionally filtered by
---prefix) will be dumped into individual files in a diff-friendly format.
+--prefix) will be dumped into individual files in a diff-friendly format.  If
+any options are needed to connect to mysql, they can be put in a file and
+specified with the --mysql-defaults flag.
 
 =head1 SETUP
 
