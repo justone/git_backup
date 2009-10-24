@@ -3,6 +3,7 @@ Changes
 MANIFEST
 README
 lib/Git/Backup.pm
+script/git_backup.pl
 t/00-load.t
 t/pod-coverage.t
 t/pod.t

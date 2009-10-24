@@ -10,6 +10,7 @@ my $builder = Module::Build->new(
     build_requires     => { 'Test::More' => 0, },
     add_to_cleanup     => ['Git-Backup-*'],
     create_makefile_pl => 'traditional',
+    script_files       => 'script/git_backup.pl',
 );
 
 $builder->create_build_script();
