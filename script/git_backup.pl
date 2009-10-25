@@ -4,5 +4,4 @@ use strict;
 use warnings;
 use Git::Backup;
 
-print "Backing up with git!\n";
-#Git::Backup::backup();
+Git::Backup::backup_cmd_line();

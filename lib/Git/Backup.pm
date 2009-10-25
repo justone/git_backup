@@ -2,6 +2,7 @@ package Git::Backup;
 
 use warnings;
 use strict;
+use Getopt::Long;
 
 =head1 NAME
 
@@ -33,18 +34,34 @@ if you don't export anything, such as for a purely object-oriented module.
 
 =head1 FUNCTIONS
 
-=head2 function1
+=head2 backup_cmd_line
 
 =cut
 
-sub function1 {
+sub backup_cmd_line {
+
+    my %options;
+    my $opts_ok = GetOptions( \%options, 'path|p=s' );
+
+    backup( \%options );
 }
 
-=head2 function2
+=head2 _parse_options
 
 =cut
 
-sub function2 {
+#sub _parse_options {
+#}
+
+=head2 backup
+
+=cut
+
+sub backup {
+
+    #my $options = shift;
+
+    #my $config = _parse_options($options);
 }
 
 =head1 AUTHOR
