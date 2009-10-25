@@ -6,7 +6,7 @@ use Getopt::Long;
 
 =head1 NAME
 
-Git::Backup - The great new Git::Backup!
+Git::Backup - Backups with Git.
 
 =head1 VERSION
 
@@ -18,23 +18,20 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
-
-Perhaps a little code snippet.
+This module examines a git repository and, after checking in the changes,
+pushes a copy to a remote.  Usually, this will be accomplished by calling the
+included git_backup.pl script, but the backend API can be called elsewhere.
 
     use Git::Backup;
 
-    my $foo = Git::Backup->new();
-    ...
-
-=head1 EXPORT
-
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
+    # backup according to $config options
+    Git::Backup::backup($config);
 
 =head1 FUNCTIONS
 
 =head2 backup_cmd_line
+
+Parses command line arguments and then calls backup().
 
 =cut
 
@@ -55,6 +52,10 @@ sub backup_cmd_line {
 
 =head2 backup
 
+Actually performs the backups.
+
+TODO: list config options.
+
 =cut
 
 sub backup {
@@ -68,58 +69,24 @@ sub backup {
 
 Nate Jones, C<< <nate at endot.org> >>
 
-=head1 BUGS
-
-Please report any bugs or feature requests to C<bug-git-backup at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Git-Backup>.  I will be notified, and then you'll
-automatically be notified of progress on your bug as I make changes.
-
-
-
-
 =head1 SUPPORT
 
 You can find documentation for this module with the perldoc command.
 
     perldoc Git::Backup
 
-
-You can also look for information at:
-
-=over 4
-
-=item * RT: CPAN's request tracker
-
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Git-Backup>
-
-=item * AnnoCPAN: Annotated CPAN documentation
-
-L<http://annocpan.org/dist/Git-Backup>
-
-=item * CPAN Ratings
-
-L<http://cpanratings.perl.org/d/Git-Backup>
-
-=item * Search CPAN
-
-L<http://search.cpan.org/dist/Git-Backup/>
-
-=back
-
-
-=head1 ACKNOWLEDGEMENTS
-
+Information on calling the git_backup.pl script can be obtained by running it
+with the --help or --man options.
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2009 Nate Jones.
+Copyright (c) 2009 by Nate Jones C<< <nate at endot.org> >>.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
 by the Free Software Foundation; or the Artistic License.
 
 See http://dev.perl.org/licenses/ for more information.
-
 
 =cut
 
