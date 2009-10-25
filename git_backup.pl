@@ -5,7 +5,8 @@ use warnings;
 use Carp;
 use Getopt::Long;
 use Pod::Usage;
-use YAML qw(Dump);
+use Cwd;
+use YAML qw(Dump LoadFile DumpFile);
 
 Getopt::Long::Configure("no_auto_abbrev");
 
@@ -17,6 +18,7 @@ my $opts_ok = GetOptions(
     'database-dir|f=s',   'prefix|o=s',
     'commit-message|c=s', 'test|t',
     'mysql-defaults|x=s', 'verbose|v',
+    'write-config|w',
 );
 
 pod2usage(2) if !$opts_ok;
@@ -26,8 +28,32 @@ pod2usage( -exitstatus => 0, -verbose => 2 ) if exists $options{man};
 # set up configuration
 my %conf = %options;
 
+if(!$options{'path'}) {
+   # we are able to use the current working directory as a path if it has a .git_backuprc in it
+   my $cwd = getcwd;
+   if(-e "$cwd/.git_backuprc") {
+      $options{'path'} = $cwd;
+   }
+}
+
 # we at least need path
 pod2usage(2) if !$options{'path'};
+
+# Check for a config file in path
+my $config_file = $options{'path'} . "/.git_backuprc";
+if(-e $config_file) {
+   my $loaded_config = LoadFile($config_file);
+   if($loaded_config) {
+      # prefer things already specified by getopt parsing. 
+      %conf = (%$loaded_config, %conf);
+   }
+}
+
+if($options{'write-config'}) {
+   DumpFile($config_file, \%conf);
+   print "Saved configuration to $config_file\n";
+   exit;
+}
 
 # default remote for git
 $conf{'remote'} ||= 'backup';
@@ -107,6 +133,7 @@ else {
         }
         elsif ( $line =~ /^#\t(.*)$/ ) {
             my $file = $1;
+            next if $file =~ /new file/; # this is already staged
             print "Adding new file: $file\n";
             run_command( "/usr/bin/git add $file", { modifies => 1 } );
         }
@@ -169,15 +196,18 @@ git_backup.pl - Simple git based backups.
 
 =head1 SYNOPSIS
 
- git_backup.pl [options] --path <path>
+ git_backup.pl [options] [--path <path>]
 
  Options:
   -p --path <path>          Root directory to back up.  This is the only
-                            required argument.
+                            required argument. It may be ommited if you run the app
+                            from a domain directory directly.
   -c --commit-message <commit message>
                             Git commit message.  Default value is: 'updated'
   -r --remote <git remote>  Once any changes are committed, they will be pushed
                             to this remote.  Default value is: 'backup'
+  -w --write-config         Using the current command line values, store the configuration into
+                            the <path>'s .git_backuprc and exit.
 
  Database options:
   -d --database <database>  Database to dump out as part of the backup.  If not
@@ -187,6 +217,7 @@ git_backup.pl - Simple git based backups.
                             File containing mysql options.
   -o --prefix <prefix>      Database table prefix.  If specified, only tables
                             with this prefix will be dumped.
+
 
  Documentation options:
   -v --verbose              Print more details about what the script is doing.
@@ -198,7 +229,8 @@ git_backup.pl - Simple git based backups.
 =head1 REQUIRED ARGUMENTS
 
  The only argument that must appear is --path.  This tells git_backup.pl what
- directory to process.
+ directory to process. However, --path might be implicit if you are running this from the
+ domain directory (when it contains a .git_backuprc file.)
 
 =head1 DESCRIPTION
 
@@ -220,6 +252,12 @@ used.  If this is passed, tables from that database (optionally filtered by
 any options are needed to connect to mysql, they can be put in a file and
 specified with the --mysql-defaults flag.
 
+This should follow the format (typically in ~/.my.cnf)
+ [client]
+ host=mydatabasehost
+ user=mydbuser
+ password=mydbpass
+
 =head1 SETUP
 
 To set up a directory for use with git_backup.pl, follow these steps:
@@ -235,6 +273,9 @@ To set up a directory for use with git_backup.pl, follow these steps:
  $ git config user.name "Your Name"
  $ git config user.email "your@email.com"
  $ git commit -m "initial commit"
+
+Warning, make sure to do a local config of these values and not to use the --global option.
+When running this from cron '--global' settings will not be read.
 
 =head2 3. Create a bare clone and copy it to another location.
 
