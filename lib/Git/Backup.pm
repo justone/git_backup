@@ -3,6 +3,7 @@ package Git::Backup;
 use warnings;
 use strict;
 use Getopt::Long;
+use Pod::Usage;
 
 =head1 NAME
 
