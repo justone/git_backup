@@ -98,6 +98,57 @@ my @tests = (
             );
             }
     },
+    {   count => 1 * 2,
+        code  => sub {
+            our $t = 'main options';
+
+            sub test_main_options {
+                Git::Backup::backup_cmd_line();
+
+                is_deeply(
+                    $backup_args,
+                    [   {   'path'           => '/test/path',
+                            'remote'         => 'remote',
+                            'database-dir'   => 'db',
+                            'commit-message' => 'commit',
+                            'mysql-defaults' => 'mydefaults',
+                            'database'       => 'mydb',
+                            'prefix'         => 'prefix',
+                            'test'           => 1,
+                            'verbose'        => 1,
+                        }
+                    ],
+                    "$t - config is correct"
+                );
+            }
+
+            @ARGV = qw(
+                --path /test/path
+                --remote remote
+                --database-dir db
+                --commit-message commit
+                --mysql-defaults mydefaults
+                --database mydb
+                --prefix prefix
+                --test
+                --verbose
+            );
+            test_main_options();
+
+            @ARGV = qw(
+                -p /test/path
+                -r remote
+                -f db
+                -c commit
+                -x mydefaults
+                -d mydb
+                -o prefix
+                -t
+                -v
+            );
+            test_main_options();
+            }
+    },
 );
 
 our $tests += $_->{count} for @tests;

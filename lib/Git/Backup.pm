@@ -38,8 +38,17 @@ Parses command line arguments and then calls backup().
 
 sub backup_cmd_line {
 
+    Getopt::Long::Configure("no_auto_abbrev");
+
     my %options;
-    my $opts_ok = GetOptions( \%options, 'path=s', 'help|h|?', 'man' );
+    my $opts_ok = GetOptions(
+        \%options,            'path|p=s',
+        'help|h|?',           'man',
+        'remote|r=s',         'database-dir|f=s',
+        'commit-message|c=s', 'mysql-defaults|x=s',
+        'database|d=s',       'prefix|o=s',
+        'test|t',             'verbose|v',
+    );
 
     pod2usage(2) if !$opts_ok;
     pod2usage(1) if exists $options{help};
