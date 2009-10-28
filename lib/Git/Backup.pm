@@ -39,9 +39,11 @@ Parses command line arguments and then calls backup().
 sub backup_cmd_line {
 
     my %options;
-    my $opts_ok = GetOptions( \%options, 'path=s', 'help|h|?' );
+    my $opts_ok = GetOptions( \%options, 'path=s', 'help|h|?', 'man' );
 
+    pod2usage(2) if !$opts_ok;
     pod2usage(1) if exists $options{help};
+    pod2usage( -exitstatus => 0, -verbose => 2 ) if exists $options{man};
 
     pod2usage(2) if !$options{'path'};
 

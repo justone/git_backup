@@ -10,7 +10,9 @@ my $backup_args;
 $gb_module->mock( 'backup', sub { $backup_args = \@_ } );
 
 my $pu_module = Test::MockModule->new('Git::Backup');
-$pu_module->mock( 'pod2usage', sub { die "pod2usage called with $_[0]\n"; } );
+my $pod2usage_args;
+$pu_module->mock( 'pod2usage',
+    sub { $pod2usage_args = \@_; die "pod2usage called\n"; } );
 
 my @tests = (
     {   count => 1 * 2,
@@ -33,7 +35,20 @@ my @tests = (
             test_simplest();
             }
     },
-    {   count => 2,
+    {   count => 3,
+        code  => sub {
+            our $t = 'missing path';
+
+            @ARGV = qw(--path);
+
+            eval { Git::Backup::backup_cmd_line(); };
+
+            ok( $@, "$t - command exited" );
+            ok( $@ =~ /pod2usage called/, "$t - pod2usage called" );
+            is_deeply( $pod2usage_args, [2], "$t - pod2usage args ok" );
+            }
+    },
+    {   count => 3,
         code  => sub {
             my $t = 'no args';
 
@@ -42,10 +57,11 @@ my @tests = (
             eval { Git::Backup::backup_cmd_line(); };
 
             ok( $@, "$t - command exited" );
-            ok( $@ =~ /pod2usage called with 2/, "$t - pod2usage called" );
+            ok( $@ =~ /pod2usage called/, "$t - pod2usage called" );
+            is_deeply( $pod2usage_args, [2], "$t - pod2usage args ok" );
             }
     },
-    {   count => 2 * 3,
+    {   count => 3 * 3,
         code  => sub {
             our $t = 'help';
 
@@ -53,8 +69,8 @@ my @tests = (
                 eval { Git::Backup::backup_cmd_line(); };
 
                 ok( $@, "$t - command exited" );
-                ok( $@ =~ /pod2usage called with 1/,
-                    "$t - pod2usage called" );
+                ok( $@ =~ /pod2usage called/, "$t - pod2usage called" );
+                is_deeply( $pod2usage_args, [1], "$t - pod2usage args ok" );
             }
 
             @ARGV = qw(--help);
@@ -63,6 +79,23 @@ my @tests = (
             test_help();
             @ARGV = qw(-?);
             test_help();
+            }
+    },
+    {   count => 3,
+        code  => sub {
+            my $t = 'man';
+
+            @ARGV = qw(--man);
+
+            eval { Git::Backup::backup_cmd_line(); };
+
+            ok( $@, "$t - command exited" );
+            ok( $@ =~ /pod2usage called/, "$t - pod2usage called" );
+            is_deeply(
+                $pod2usage_args,
+                [ -exitstatus => 0, -verbose => 2 ],
+                "$t - pod2usage args ok"
+            );
             }
     },
 );
