@@ -18,7 +18,7 @@ my $opts_ok = GetOptions(
     'database-dir|f=s',   'prefix|o=s',
     'commit-message|c=s', 'test|t',
     'mysql-defaults|x=s', 'verbose|v',
-    'write-config|w',
+    'write-config|w',     'push!'
 );
 
 pod2usage(2) if !$opts_ok;
@@ -63,6 +63,11 @@ $conf{'commit-message'} ||= 'updated';
 
 # default database dir is nothing
 $conf{'database-dir'} ||= '';
+
+# default to push == 1
+if(!defined($conf{'push'})) {
+    $conf{'push'} = 1;
+}
 
 my $defaults_file_option = "";
 if ( $conf{'mysql-defaults'} ) {
@@ -144,9 +149,13 @@ else {
     run_command( "/usr/bin/git commit -m \"$conf{'commit-message'}\"",
         { modifies => 1 } );
 
-    # then push to the remote
-    print "Pushing to backup remote: $conf{'remote'}\n";
-    run_command( "/usr/bin/git push $conf{'remote'}", { modifies => 1 } );
+    if($conf{'push'} != 0) {
+        # then push to the remote
+        print "Pushing to backup remote: $conf{'remote'}\n";
+        run_command( "/usr/bin/git push $conf{'remote'}", { modifies => 1 } );
+    } else {
+        print "Commited, but not pushing (push disabled with --nopush.)\n";
+    }
 }
 
 exit;
@@ -208,6 +217,8 @@ git_backup.pl - Simple git based backups.
                             to this remote.  Default value is: 'backup'
   -w --write-config         Using the current command line values, store the configuration into
                             the <path>'s .git_backuprc and exit.
+     --push/--nopush        Defaults to true ('do push' but allows you to disable the git push
+                            to enable use without a remote configured.
 
  Database options:
   -d --database <database>  Database to dump out as part of the backup.  If not
