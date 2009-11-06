@@ -28,12 +28,14 @@ pod2usage( -exitstatus => 0, -verbose => 2 ) if exists $options{man};
 # set up configuration
 my %conf = %options;
 
-if(!$options{'path'}) {
-   # we are able to use the current working directory as a path if it has a .git_backuprc in it
-   my $cwd = getcwd;
-   if(-e "$cwd/.git_backuprc") {
-      $options{'path'} = $cwd;
-   }
+if ( !$options{'path'} ) {
+
+    # we are able to use the current working directory as a path if it has a
+    # .git_backuprc in it
+    my $cwd = getcwd;
+    if ( -e "$cwd/.git_backuprc" ) {
+        $options{'path'} = $cwd;
+    }
 }
 
 # we at least need path
@@ -41,18 +43,19 @@ pod2usage(2) if !$options{'path'};
 
 # Check for a config file in path
 my $config_file = $options{'path'} . "/.git_backuprc";
-if(-e $config_file) {
-   my $loaded_config = LoadFile($config_file);
-   if($loaded_config) {
-      # prefer things already specified by getopt parsing. 
-      %conf = (%$loaded_config, %conf);
-   }
+if ( -e $config_file ) {
+    my $loaded_config = LoadFile($config_file);
+    if ($loaded_config) {
+
+        # prefer things already specified by getopt parsing.
+        %conf = ( %$loaded_config, %conf );
+    }
 }
 
-if($options{'write-config'}) {
-   DumpFile($config_file, \%conf);
-   print "Saved configuration to $config_file\n";
-   exit;
+if ( $options{'write-config'} ) {
+    DumpFile( $config_file, \%conf );
+    print "Saved configuration to $config_file\n";
+    exit;
 }
 
 # default remote for git
@@ -65,7 +68,7 @@ $conf{'commit-message'} ||= 'updated';
 $conf{'database-dir'} ||= '';
 
 # default to push == 1
-if(!defined($conf{'push'})) {
+if ( !defined( $conf{'push'} ) ) {
     $conf{'push'} = 1;
 }
 
@@ -138,7 +141,7 @@ else {
         }
         elsif ( $line =~ /^#\t(.*)$/ ) {
             my $file = $1;
-            next if $file =~ /new file/; # this is already staged
+            next if $file =~ /new file/;    # this is already staged
             print "Adding new file: $file\n";
             run_command( "/usr/bin/git add $file", { modifies => 1 } );
         }
@@ -149,11 +152,13 @@ else {
     run_command( "/usr/bin/git commit -m \"$conf{'commit-message'}\"",
         { modifies => 1 } );
 
-    if($conf{'push'} != 0) {
+    if ( $conf{'push'} != 0 ) {
+
         # then push to the remote
         print "Pushing to backup remote: $conf{'remote'}\n";
         run_command( "/usr/bin/git push $conf{'remote'}", { modifies => 1 } );
-    } else {
+    }
+    else {
         print "Commited, but not pushing (push disabled with --nopush.)\n";
     }
 }
