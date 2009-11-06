@@ -119,6 +119,7 @@ print "Git status:\n$git_status\n" if $conf{'verbose'};
 
 if ( $git_status =~ /nothing to commit/ ) {
     print "Nothing to commit, exiting...\n";
+    exit 1;
 }
 else {
 
