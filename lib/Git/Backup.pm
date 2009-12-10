@@ -4,6 +4,7 @@ use warnings;
 use strict;
 use Getopt::Long;
 use Pod::Usage;
+use Cwd;
 
 =head1 NAME
 
@@ -63,8 +64,26 @@ sub backup_cmd_line {
 
 =cut
 
-#sub _parse_options {
-#}
+sub _parse_options {
+    my $options = shift;
+
+    my %conf = %{$options};
+
+    if ( !$conf{'path'} ) {
+
+        # we are able to use the current working directory as a path
+        # if it has a .git_backuprc in it
+        my $cwd = getcwd;
+        if ( -e "$cwd/.git_backuprc" ) {
+            $conf{'path'} = $cwd;
+        }
+    }
+
+    # we at least need path
+    pod2usage(2) if !$conf{'path'};
+
+    return \%conf;
+}
 
 =head2 backup
 

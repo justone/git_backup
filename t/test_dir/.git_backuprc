@@ -1,0 +1,5 @@
+---
+database: wpdb
+database-dir: db
+path: /var/www/wordpress
+write-config: 1
