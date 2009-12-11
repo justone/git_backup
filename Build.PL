@@ -3,11 +3,14 @@ use warnings;
 use Module::Build;
 
 my $builder = Module::Build->new(
-    module_name        => 'Git::Backup',
-    license            => 'perl',
-    dist_author        => q{Nate Jones <nate@endot.org>},
-    dist_version_from  => 'lib/Git/Backup.pm',
-    build_requires     => { 'Test::More' => 0, 'Test::MockModule' => 0 },
+    module_name       => 'Git::Backup',
+    license           => 'perl',
+    dist_author       => q{Nate Jones <nate@endot.org>},
+    dist_version_from => 'lib/Git/Backup.pm',
+    requires =>
+        { 'Cwd' => 0, 'Pod::Usage' => 0, 'Getopt::Long' => 0, 'YAML' => 0 },
+    build_requires =>
+        { 'Test::More' => 0, 'Test::Trap' => 0, 'Test::MockModule' => 0 },
     add_to_cleanup     => ['Git-Backup-*'],
     create_makefile_pl => 'traditional',
     script_files       => 'script/git_backup.pl',

@@ -5,8 +5,10 @@ README
 lib/Git/Backup.pm
 script/git_backup.pl
 t/00-load.t
-t/pod-coverage.t
-t/pod.t
+t/_parse_options.t
 t/boilerplate.t
 t/coverage.t
 t/options.t
+t/pod-coverage.t
+t/pod.t
+t/test_dir/.git_backuprc

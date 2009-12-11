@@ -5,6 +5,7 @@ use strict;
 use Getopt::Long;
 use Pod::Usage;
 use Cwd;
+use YAML qw(Dump LoadFile DumpFile);
 
 =head1 NAME
 
@@ -60,6 +61,13 @@ sub backup_cmd_line {
     backup( \%options );
 }
 
+=head2 _print_configuration
+
+=cut
+
+sub _print_configuration {
+}
+
 =head2 _parse_options
 
 =cut
@@ -81,6 +89,38 @@ sub _parse_options {
 
     # we at least need path
     pod2usage(2) if !$conf{'path'};
+
+    # Check for a config file in path
+    my $config_file = $conf{'path'} . "/.git_backuprc";
+    if ( -e $config_file ) {
+        my $loaded_config = LoadFile($config_file);
+
+        # prefer things already specified by getopt parsing.
+        %conf = ( %$loaded_config, %conf );
+    }
+
+    if ( $conf{'write-config'} ) {
+        delete $conf{'write-config'};    # no need to save this
+        DumpFile( $config_file, \%conf );
+        print "Saved configuration to $config_file\n";
+        exit;
+    }
+
+    # default remote for git
+    $conf{'remote'} ||= 'backup';
+
+    # default commit message for git
+    $conf{'commit-message'} ||= 'updated';
+
+    # default database dir is nothing
+    $conf{'database-dir'} ||= '';
+
+    # default to push == 1
+    if ( !defined( $conf{'push'} ) ) {
+        $conf{'push'} = 1;
+    }
+
+    _print_configuration( \%conf ) if $conf{'verbose'};
 
     return \%conf;
 }
