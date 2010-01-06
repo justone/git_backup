@@ -66,6 +66,26 @@ sub backup_cmd_line {
 =cut
 
 sub _print_configuration {
+    my $conf = shift;
+
+    print "Configuration after parsing options:\n";
+    printf " path: %s\n",   $conf->{'path'};
+    printf " remote: %s\n", $conf->{'remote'};
+    printf " database: %s\n",
+        $conf->{'database'} ? $conf->{'database'} : '<none specified>';
+    printf " database-dir: %s\n",
+        $conf->{'database-dir'}
+        ? $conf->{'database-dir'}
+        : '<none specified>';
+    printf " prefix: %s\n",
+        $conf->{'prefix'} ? $conf->{'prefix'} : '<none specified>';
+    printf " mysql-defaults: %s\n",
+        $conf->{'mysql-defaults'}
+        ? $conf->{'mysql-defaults'}
+        : '<none specified>';
+    printf " verbose: %s\n", $conf->{'verbose'} ? 'true' : 'false';
+    printf " test: %s\n",    $conf->{'test'}    ? 'true' : 'false';
+    printf " commit-message: '%s'\n", $conf->{'commit-message'};
 }
 
 =head2 _parse_options

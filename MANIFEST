@@ -6,6 +6,7 @@ lib/Git/Backup.pm
 script/git_backup.pl
 t/00-load.t
 t/_parse_options.t
+t/_print_configuration.t
 t/boilerplate.t
 t/coverage.t
 t/options.t
