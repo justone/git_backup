@@ -27,7 +27,7 @@ my @tests = (
             is( $trap->stdout(),
                 <<SET_ONE, "$t - configuration print is ok" );
 Configuration after parsing options:
- path: /Users/nate/projects/git_backup/t
+ path: $Bin
  remote: backup
  database: <none specified>
  database-dir: <none specified>
@@ -59,7 +59,7 @@ SET_ONE
             is( $trap->stdout(),
                 <<SET_ONE, "$t - configuration print is ok" );
 Configuration after parsing options:
- path: /Users/nate/projects/git_backup/t
+ path: $Bin
  remote: other
  database: database
  database-dir: db
