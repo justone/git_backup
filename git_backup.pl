@@ -7,6 +7,7 @@ use Getopt::Long;
 use Pod::Usage;
 use Cwd;
 use YAML qw(Dump LoadFile DumpFile);
+use File::Temp qw(tempfile);
 
 Getopt::Long::Configure("no_auto_abbrev");
 
@@ -18,7 +19,9 @@ my $opts_ok = GetOptions(
     'database-dir|f=s',   'prefix|o=s',
     'commit-message|c=s', 'test|t',
     'mysql-defaults|x=s', 'verbose|v',
-    'write-config|w',     'push!'
+    'write-config|w',     'push!',
+    'wp-config=s',        'git-init',
+    'git-name=s',         'git-email=s',
 );
 
 pod2usage(2) if !$opts_ok;
@@ -28,31 +31,69 @@ pod2usage( -exitstatus => 0, -verbose => 2 ) if exists $options{man};
 # set up configuration
 my %conf = %options;
 
+# we need a path. If one's not provided, it better be implicit.
 if(!$options{'path'}) {
    # we are able to use the current working directory as a path if it has a .git_backuprc in it
+   # or any wordpress config we can find (relative path or abs path)
    my $cwd = getcwd;
-   if(-e "$cwd/.git_backuprc") {
+   if(-e "$cwd/.git_backuprc" || -e "$cwd/$options{'wp-config'}" || -e "$options{'wp-config'}") {
       $options{'path'} = $cwd;
    }
 }
 
+
 # we at least need path
 pod2usage(2) if !$options{'path'};
 
-# Check for a config file in path
-my $config_file = $options{'path'} . "/.git_backuprc";
-if(-e $config_file) {
-   my $loaded_config = LoadFile($config_file);
-   if($loaded_config) {
-      # prefer things already specified by getopt parsing. 
-      %conf = (%$loaded_config, %conf);
+# check to see if we are using a wordpress config instead of .git_backuprc
+if($options{'wp-config'}) {
+   my $wp_config = $options{'wp-config'};
+   if(! -e $wp_config) {
+      $wp_config = $options{'path'} . "/" . $options{'wp-config'};
    }
-}
+   open(my $wp, "<", $wp_config) || die "Can't open wordpress config: $!\n";
+   my %convert = (
+      'DB_NAME' => 'database',
+      'DB_USER' => 'db_user', 
+      'DB_PASSWORD' => 'db_password',
+      'DB_HOST' => 'db_host',
+   );
+   while(<$wp>) {
+      if(/table_prefix.*?=.*?["'](.*?)['"]/) {
+         $conf{'table_prefix'} = $1;
+      } elsif (/define\(\s*['"](.*?)['"]\s*,\s*["'](.*?)['"]\)/) {
+         if($convert{$1}) {
+            $conf{$convert{$1}} = $2;
+         }
+      }
+   }
+   close($wp);
+   # create a config file for mysql 
+   my ($fh, $filename) = tempfile();
+   $conf{'mysql-defaults'} = $filename;
+   chmod 0600, $filename; # nobody else can read this, has passwords in it.
+   print $fh "[client]\n";
+   print $fh "host=$conf{db_host}\n";
+   print $fh "user=$conf{db_user}\n";
+   print $fh "password=$conf{db_password}\n";
+   close($fh);
 
-if($options{'write-config'}) {
-   DumpFile($config_file, \%conf);
-   print "Saved configuration to $config_file\n";
-   exit;
+} else {
+   # Check for a config file in path
+   my $config_file = $options{'path'} . "/.git_backuprc";
+   if(-e $config_file) {
+      my $loaded_config = LoadFile($config_file);
+      if($loaded_config) {
+         # prefer things already specified by getopt parsing. 
+         %conf = (%$loaded_config, %conf);
+      }
+   }
+
+   if($options{'write-config'}) {
+      DumpFile($config_file, \%conf);
+      print "Saved configuration to $config_file\n";
+      exit;
+   }
 }
 
 # default remote for git
@@ -61,8 +102,8 @@ $conf{'remote'} ||= 'backup';
 # default commit message for git
 $conf{'commit-message'} ||= 'updated';
 
-# default database dir is nothing
-$conf{'database-dir'} ||= '';
+# default database dir is $path/db
+$conf{'database-dir'} ||= "$conf{path}/db";
 
 # default to push == 1
 if(!defined($conf{'push'})) {
@@ -79,6 +120,12 @@ print_configuration() if $conf{'verbose'};
 print "Changing to: $options{'path'}\n";
 chdir $options{'path'}
     || die "unable to change to directory $options{'path'}";
+
+if(!-d ".git" && $conf{'git-init'}) {
+   run_command("git init", { modifies => 1 });
+   run_command("git config user.name \"$conf{'git-name'}\"", { modifies => 1 });
+   run_command("git config user.email \"$conf{'git-email'}\"", { modifies => 1 });
+}
 
 # first, if a database is specified, dump its tables
 if ( $conf{'database'} ) {
