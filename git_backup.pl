@@ -45,6 +45,7 @@ if(!$options{'path'}) {
 # we at least need path
 pod2usage(2) if !$options{'path'};
 
+<<<<<<< HEAD:git_backup.pl
 # check to see if we are using a wordpress config instead of .git_backuprc
 if($options{'wp-config'}) {
    my $wp_config = $options{'wp-config'};
@@ -65,6 +66,7 @@ if($options{'wp-config'}) {
          if($convert{$1}) {
             $conf{$convert{$1}} = $2;
          }
+         
       }
    }
    close($wp);
@@ -77,7 +79,6 @@ if($options{'wp-config'}) {
    print $fh "user=$conf{db_user}\n";
    print $fh "password=$conf{db_password}\n";
    close($fh);
-
 } else {
    # Check for a config file in path
    my $config_file = $options{'path'} . "/.git_backuprc";
@@ -106,7 +107,7 @@ $conf{'commit-message'} ||= 'updated';
 $conf{'database-dir'} ||= "$conf{path}/db";
 
 # default to push == 1
-if(!defined($conf{'push'})) {
+if ( !defined( $conf{'push'} ) ) {
     $conf{'push'} = 1;
 }
 
@@ -166,6 +167,7 @@ print "Git status:\n$git_status\n" if $conf{'verbose'};
 
 if ( $git_status =~ /nothing to commit/ ) {
     print "Nothing to commit, exiting...\n";
+    exit 1;
 }
 else {
 
@@ -185,7 +187,7 @@ else {
         }
         elsif ( $line =~ /^#\t(.*)$/ ) {
             my $file = $1;
-            next if $file =~ /new file/; # this is already staged
+            next if $file =~ /new file/;    # this is already staged
             print "Adding new file: $file\n";
             run_command( "/usr/bin/git add $file", { modifies => 1 } );
         }
@@ -196,11 +198,13 @@ else {
     run_command( "/usr/bin/git commit -m \"$conf{'commit-message'}\"",
         { modifies => 1 } );
 
-    if($conf{'push'} != 0) {
+    if ( $conf{'push'} != 0 ) {
+
         # then push to the remote
         print "Pushing to backup remote: $conf{'remote'}\n";
         run_command( "/usr/bin/git push $conf{'remote'}", { modifies => 1 } );
-    } else {
+    }
+    else {
         print "Commited, but not pushing (push disabled with --nopush.)\n";
     }
 }
