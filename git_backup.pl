@@ -22,6 +22,7 @@ my $opts_ok = GetOptions(
     'write-config|w',     'push!',
     'wp-config=s',        'git-init',
     'git-name=s',         'git-email=s',
+    'backup-db-host=s',
 );
 
 pod2usage(2) if !$opts_ok;
@@ -38,6 +39,9 @@ if(!$options{'path'}) {
    my $cwd = getcwd;
    if(-e "$cwd/.git_backuprc" || -e "$cwd/$options{'wp-config'}" || -e "$options{'wp-config'}") {
       $options{'path'} = $cwd;
+      $conf{'path'} = $cwd;
+   } elsif(defined($options{'wp-config'})) {
+        die "No wp-config.php and we needed one to exist\n";
    }
 }
 
@@ -69,6 +73,9 @@ if($options{'wp-config'}) {
       }
    }
    close($wp);
+   if(!defined($conf{db_host})) {
+       $conf{db_host} = $conf{'backup-db-host'};
+   }
    # create a config file for mysql 
    my ($fh, $filename) = tempfile();
    $conf{'mysql-defaults'} = $filename;
