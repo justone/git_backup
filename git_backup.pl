@@ -45,7 +45,6 @@ if(!$options{'path'}) {
 # we at least need path
 pod2usage(2) if !$options{'path'};
 
-<<<<<<< HEAD:git_backup.pl
 # check to see if we are using a wordpress config instead of .git_backuprc
 if($options{'wp-config'}) {
    my $wp_config = $options{'wp-config'};
