@@ -160,7 +160,7 @@ if ( $conf{'database'} ) {
     foreach my $table (@table_list) {
         print "Dumping $table.\n";
         run_command(
-            "/usr/bin/mysqldump $defaults_file_option --extended-insert=FALSE $conf{'database'} $table | /bin/sed 's/ AUTO_INCREMENT=[0-9]\\+//' > $conf{'database-dir'}$table.dump.sql",
+            "/usr/bin/mysqldump $defaults_file_option --extended-insert=FALSE $conf{'database'} $table | /bin/sed 's/ AUTO_INCREMENT=[0-9]\\+//' | grep -v 'Dump completed on'> $conf{'database-dir'}$table.dump.sql",
             { modifies => 1 }
         );
     }
