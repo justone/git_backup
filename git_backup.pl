@@ -184,18 +184,18 @@ else {
         if ( $line =~ /^#\tmodified: +(.*)$/ ) {
             my $file = $1;
             print "Adding modified file: $file\n";
-            run_command( "/usr/bin/git add $file", { modifies => 1 } );
+            run_command( "/usr/bin/git add \"$file\"", { modifies => 1 } );
         }
         elsif ( $line =~ /^#\tdeleted: +(.*)$/ ) {
             my $file = $1;
             print "Removing deleted file: $file\n";
-            run_command( "/usr/bin/git rm $file", { modifies => 1 } );
+            run_command( "/usr/bin/git rm \"$file\"", { modifies => 1 } );
         }
         elsif ( $line =~ /^#\t(.*)$/ ) {
             my $file = $1;
             next if $file =~ /new file/;    # this is already staged
             print "Adding new file: $file\n";
-            run_command( "/usr/bin/git add $file", { modifies => 1 } );
+            run_command( "/usr/bin/git add \"$file\"", { modifies => 1 } );
         }
     }
 
