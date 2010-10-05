@@ -22,7 +22,7 @@ my $opts_ok = GetOptions(
     'write-config|w',     'push!',
     'wp-config=s',        'git-init',
     'git-name=s',         'git-email=s',
-    'backup-db-host=s',
+    'backup-db-host=s',   'quiet|q',
 );
 
 pod2usage(2) if !$opts_ok;
@@ -98,7 +98,7 @@ if($options{'wp-config'}) {
 
    if($options{'write-config'}) {
       DumpFile($config_file, \%conf);
-      print "Saved configuration to $config_file\n";
+      info("Saved configuration to $config_file\n");
       exit;
    }
 }
@@ -124,7 +124,7 @@ if ( $conf{'mysql-defaults'} ) {
 
 print_configuration() if $conf{'verbose'};
 
-print "Changing to: $options{'path'}\n";
+info("Changing to: $options{'path'}\n");
 chdir $options{'path'}
     || die "unable to change to directory $options{'path'}";
 
@@ -136,7 +136,7 @@ if(!-d ".git" && $conf{'git-init'}) {
 
 # first, if a database is specified, dump its tables
 if ( $conf{'database'} ) {
-    print "Database specified, dumping tables.\n";
+    info("Database specified, dumping tables.\n");
 
     if ( $conf{'database-dir'} ) {
         if ( !( -e $conf{'database-dir'} ) ) {
@@ -155,10 +155,9 @@ if ( $conf{'database'} ) {
     if ( $conf{'prefix'} ) {
         @table_list = grep {/^$conf{'prefix'}/} @table_list;
     }
-    print "Tables to dump: " . join( ",", @table_list ) . ".\n"
-        if $conf{'verbose'};
+    debug("Tables to dump: " . join( ",", @table_list ) . ".\n");
     foreach my $table (@table_list) {
-        print "Dumping $table.\n";
+        info("Dumping $table.\n");
         run_command(
             "/usr/bin/mysqldump $defaults_file_option --extended-insert=FALSE $conf{'database'} $table | /bin/sed 's/ AUTO_INCREMENT=[0-9]\\+//' | grep -v 'Dump completed on'> $conf{'database-dir'}$table.dump.sql",
             { modifies => 1 }
@@ -167,9 +166,9 @@ if ( $conf{'database'} ) {
 }
 
 # now, make sure everything is checked in and then push it to the backup remote
-print "Checking git status.\n";
+info("Checking git status.\n");
 my $git_status = run_command( '/usr/bin/git status', { ignore_exit => 1 } );
-print "Git status:\n$git_status\n" if $conf{'verbose'};
+debug("Git status:\n$git_status\n");
 
 if ( $git_status =~ /nothing to commit/ ) {
     print "Nothing to commit, exiting...\n";
@@ -200,18 +199,18 @@ else {
     }
 
     # now commit
-    print "Committing with message '$conf{'commit-message'}'\n";
+    info("Committing with message '$conf{'commit-message'}'\n");
     run_command( "/usr/bin/git commit -m \"$conf{'commit-message'}\"",
         { modifies => 1 } );
 
     if ( $conf{'push'} != 0 ) {
 
         # then push to the remote
-        print "Pushing to backup remote: $conf{'remote'}\n";
+        info("Pushing to backup remote: $conf{'remote'}\n");
         run_command( "/usr/bin/git push $conf{'remote'}", { modifies => 1 } );
     }
     else {
-        print "Commited, but not pushing (push disabled with --nopush.)\n";
+        info("Commited, but not pushing (push disabled with --nopush.)\n");
     }
 }
 
@@ -241,17 +240,25 @@ sub print_configuration {
 
 sub run_command {
     my ( $cmd, $options ) = @_;
-    print "Running command: $cmd\n" if $conf{'verbose'};
+    debug("Running command: $cmd\n");
 
     return if ( $options->{modifies} && $conf{'test'} );
 
-    my $output = `$cmd`;
+    my $output = `$cmd 2>&1`;
     my $rc     = $? >> 8;
     if ( !$options->{'ignore_exit'} && $rc ) {
         die "$cmd failed with exit code $rc:\n$output\n";
     }
 
     return $output;
+}
+
+sub info {
+    printf(@_) if !$conf{'quiet'};
+}
+
+sub debug {
+    printf(@_) if $conf{'verbose'};
 }
 
 __END__
