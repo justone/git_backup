@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 use strict;
 use warnings;
@@ -149,7 +149,7 @@ if ( $conf{'database'} ) {
     my @table_list = split(
         /\n/,
         run_command(
-            "/usr/bin/mysql $defaults_file_option --silent $conf{'database'} -e \"show tables\""
+            "mysql $defaults_file_option --silent $conf{'database'} -e \"show tables\""
         )
     );
     if ( $conf{'prefix'} ) {
@@ -159,7 +159,7 @@ if ( $conf{'database'} ) {
     foreach my $table (@table_list) {
         info("Dumping $table.\n");
         run_command(
-            "/usr/bin/mysqldump $defaults_file_option --extended-insert=FALSE $conf{'database'} $table | /bin/sed 's/ AUTO_INCREMENT=[0-9]\\+//' | grep -v 'Dump completed on'> $conf{'database-dir'}$table.dump.sql",
+            "mysqldump $defaults_file_option --extended-insert=FALSE $conf{'database'} $table | /bin/sed 's/ AUTO_INCREMENT=[0-9]\\+//' | grep -v 'Dump completed on'> $conf{'database-dir'}$table.dump.sql",
             { modifies => 1 }
         );
     }
@@ -167,7 +167,7 @@ if ( $conf{'database'} ) {
 
 # now, make sure everything is checked in and then push it to the backup remote
 info("Checking git status.\n");
-my $git_status = run_command( '/usr/bin/git status', { ignore_exit => 1 } );
+my $git_status = run_command( 'git status', { ignore_exit => 1 } );
 debug("Git status:\n$git_status\n");
 
 if ( $git_status =~ /nothing to commit/ ) {
@@ -183,31 +183,31 @@ else {
         if ( $line =~ /^#\tmodified: +(.*)$/ ) {
             my $file = $1;
             print "Adding modified file: $file\n";
-            run_command( "/usr/bin/git add \"$file\"", { modifies => 1 } );
+            run_command( "git add \"$file\"", { modifies => 1 } );
         }
         elsif ( $line =~ /^#\tdeleted: +(.*)$/ ) {
             my $file = $1;
             print "Removing deleted file: $file\n";
-            run_command( "/usr/bin/git rm \"$file\"", { modifies => 1 } );
+            run_command( "git rm \"$file\"", { modifies => 1 } );
         }
         elsif ( $line =~ /^#\t(.*)$/ ) {
             my $file = $1;
             next if $file =~ /new file/;    # this is already staged
             print "Adding new file: $file\n";
-            run_command( "/usr/bin/git add \"$file\"", { modifies => 1 } );
+            run_command( "git add \"$file\"", { modifies => 1 } );
         }
     }
 
     # now commit
     info("Committing with message '$conf{'commit-message'}'\n");
-    run_command( "/usr/bin/git commit -m \"$conf{'commit-message'}\"",
+    run_command( "git commit -m \"$conf{'commit-message'}\"",
         { modifies => 1 } );
 
     if ( $conf{'push'} != 0 ) {
 
         # then push to the remote
         info("Pushing to backup remote: $conf{'remote'}\n");
-        run_command( "/usr/bin/git push $conf{'remote'}", { modifies => 1 } );
+        run_command( "git push $conf{'remote'}", { modifies => 1 } );
     }
     else {
         info("Commited, but not pushing (push disabled with --nopush.)\n");
