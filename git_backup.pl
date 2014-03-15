@@ -13,16 +13,11 @@ Getopt::Long::Configure("no_auto_abbrev");
 
 my %options;
 my $opts_ok = GetOptions(
-    \%options,            'help|?|h',
-    'man',                'path|p=s',
-    'remote|r=s',         'database|d=s',
-    'database-dir|f=s',   'prefix|o=s',
-    'commit-message|c=s', 'test|t',
-    'mysql-defaults|x=s', 'verbose|v',
-    'write-config|w',     'push!',
-    'wp-config=s',        'git-init',
-    'git-name=s',         'git-email=s',
-    'backup-db-host=s',   'quiet|q',
+    \%options,            'help|?|h',     'man',                'path|p=s',
+    'remote|r=s',         'database|d=s', 'database-dir|f=s',   'prefix|o=s',
+    'commit-message|c=s', 'test|t',       'mysql-defaults|x=s', 'verbose|v',
+    'write-config|w',     'push!',        'wp-config=s',        'git-init',
+    'git-name=s',         'git-email=s',  'backup-db-host=s',   'quiet|q',
 );
 
 pod2usage(2) if !$opts_ok;
@@ -33,74 +28,81 @@ pod2usage( -exitstatus => 0, -verbose => 2 ) if exists $options{man};
 my %conf = %options;
 
 # we need a path. If one's not provided, it better be implicit.
-if(!$options{'path'}) {
-   # we are able to use the current working directory as a path if it has a .git_backuprc in it
-   # or any wordpress config we can find (relative path or abs path)
-   my $cwd = getcwd;
-   if(-e "$cwd/.git_backuprc" || -e "$cwd/$options{'wp-config'}" || -e "$options{'wp-config'}") {
-      $options{'path'} = $cwd;
-      $conf{'path'} = $cwd;
-   } elsif(defined($options{'wp-config'})) {
-        die "No wp-config.php and we needed one to exist\n";
-   }
-}
+if ( !$options{'path'} ) {
 
+    # we are able to use the current working directory as a path if it has a .git_backuprc in it
+    # or any wordpress config we can find (relative path or abs path)
+    my $cwd = getcwd;
+    if ( -e "$cwd/.git_backuprc" || -e "$cwd/$options{'wp-config'}" || -e "$options{'wp-config'}" )
+    {
+        $options{'path'} = $cwd;
+        $conf{'path'}    = $cwd;
+    }
+    elsif ( defined( $options{'wp-config'} ) ) {
+        die "No wp-config.php and we needed one to exist\n";
+    }
+}
 
 # we at least need path
 pod2usage(2) if !$options{'path'};
 
 # check to see if we are using a wordpress config instead of .git_backuprc
-if($options{'wp-config'}) {
-   my $wp_config = $options{'wp-config'};
-   if(! -e $wp_config) {
-      $wp_config = $options{'path'} . "/" . $options{'wp-config'};
-   }
-   open(my $wp, "<", $wp_config) || die "Can't open wordpress config: $!\n";
-   my %convert = (
-      'DB_NAME' => 'database',
-      'DB_USER' => 'db_user', 
-      'DB_PASSWORD' => 'db_password',
-      'DB_HOST' => 'db_host',
-   );
-   while(<$wp>) {
-      if(/table_prefix.*?=.*?["'](.*?)['"]/) {
-         $conf{'table_prefix'} = $1;
-      } elsif (/define\(\s*['"](.*?)['"]\s*,\s*["'](.*?)['"]\)/) {
-         if($convert{$1}) {
-            $conf{$convert{$1}} = $2;
-         }
-         
-      }
-   }
-   close($wp);
-   if(!defined($conf{db_host})) {
-       $conf{db_host} = $conf{'backup-db-host'};
-   }
-   # create a config file for mysql 
-   my ($fh, $filename) = tempfile();
-   $conf{'mysql-defaults'} = $filename;
-   chmod 0600, $filename; # nobody else can read this, has passwords in it.
-   print $fh "[client]\n";
-   print $fh "host=$conf{db_host}\n";
-   print $fh "user=$conf{db_user}\n";
-   print $fh "password=$conf{db_password}\n";
-   close($fh);
-} else {
-   # Check for a config file in path
-   my $config_file = $options{'path'} . "/.git_backuprc";
-   if(-e $config_file) {
-      my $loaded_config = LoadFile($config_file);
-      if($loaded_config) {
-         # prefer things already specified by getopt parsing. 
-         %conf = (%$loaded_config, %conf);
-      }
-   }
+if ( $options{'wp-config'} ) {
+    my $wp_config = $options{'wp-config'};
+    if ( !-e $wp_config ) {
+        $wp_config = $options{'path'} . "/" . $options{'wp-config'};
+    }
+    open( my $wp, "<", $wp_config ) || die "Can't open wordpress config: $!\n";
+    my %convert = (
+        'DB_NAME'     => 'database',
+        'DB_USER'     => 'db_user',
+        'DB_PASSWORD' => 'db_password',
+        'DB_HOST'     => 'db_host',
+    );
+    while (<$wp>) {
+        if (/table_prefix.*?=.*?["'](.*?)['"]/) {
+            $conf{'table_prefix'} = $1;
+        }
+        elsif (/define\(\s*['"](.*?)['"]\s*,\s*["'](.*?)['"]\)/) {
+            if ( $convert{$1} ) {
+                $conf{ $convert{$1} } = $2;
+            }
 
-   if($options{'write-config'}) {
-      DumpFile($config_file, \%conf);
-      info("Saved configuration to $config_file\n");
-      exit;
-   }
+        }
+    }
+    close($wp);
+    if ( !defined( $conf{db_host} ) ) {
+        $conf{db_host} = $conf{'backup-db-host'};
+    }
+
+    # create a config file for mysql
+    my ( $fh, $filename ) = tempfile();
+    $conf{'mysql-defaults'} = $filename;
+    chmod 0600, $filename;    # nobody else can read this, has passwords in it.
+    print $fh "[client]\n";
+    print $fh "host=$conf{db_host}\n";
+    print $fh "user=$conf{db_user}\n";
+    print $fh "password=$conf{db_password}\n";
+    close($fh);
+}
+else {
+
+    # Check for a config file in path
+    my $config_file = $options{'path'} . "/.git_backuprc";
+    if ( -e $config_file ) {
+        my $loaded_config = LoadFile($config_file);
+        if ($loaded_config) {
+
+            # prefer things already specified by getopt parsing.
+            %conf = ( %$loaded_config, %conf );
+        }
+    }
+
+    if ( $options{'write-config'} ) {
+        DumpFile( $config_file, \%conf );
+        info("Saved configuration to $config_file\n");
+        exit;
+    }
 }
 
 # default remote for git
@@ -125,13 +127,12 @@ if ( $conf{'mysql-defaults'} ) {
 print_configuration() if $conf{'verbose'};
 
 info("Changing to: $options{'path'}\n");
-chdir $options{'path'}
-    || die "unable to change to directory $options{'path'}";
+chdir $options{'path'} || die "unable to change to directory $options{'path'}";
 
-if(!-d ".git" && $conf{'git-init'}) {
-   run_command("git init", { modifies => 1 });
-   run_command("git config user.name \"$conf{'git-name'}\"", { modifies => 1 });
-   run_command("git config user.email \"$conf{'git-email'}\"", { modifies => 1 });
+if ( !-d ".git" && $conf{'git-init'} ) {
+    run_command( "git init",                                     { modifies => 1 } );
+    run_command( "git config user.name \"$conf{'git-name'}\"",   { modifies => 1 } );
+    run_command( "git config user.email \"$conf{'git-email'}\"", { modifies => 1 } );
 }
 
 # first, if a database is specified, dump its tables
@@ -140,22 +141,17 @@ if ( $conf{'database'} ) {
 
     if ( $conf{'database-dir'} ) {
         if ( !( -e $conf{'database-dir'} ) ) {
-            run_command( "/bin/mkdir -p $conf{'database-dir'}",
-                { modifies => 1 } );
+            run_command( "/bin/mkdir -p $conf{'database-dir'}", { modifies => 1 } );
         }
         $conf{'database-dir'} .= "/" unless $conf{'database-dir'} =~ /\/$/;
     }
 
-    my @table_list = split(
-        /\n/,
-        run_command(
-            "mysql $defaults_file_option --silent $conf{'database'} -e \"show tables\""
-        )
-    );
+    my @table_list = split( /\n/,
+        run_command("mysql $defaults_file_option --silent $conf{'database'} -e \"show tables\"") );
     if ( $conf{'prefix'} ) {
         @table_list = grep {/^$conf{'prefix'}/} @table_list;
     }
-    debug("Tables to dump: " . join( ",", @table_list ) . ".\n");
+    debug( "Tables to dump: " . join( ",", @table_list ) . ".\n" );
     foreach my $table (@table_list) {
         info("Dumping $table.\n");
         run_command(
@@ -200,8 +196,7 @@ else {
 
     # now commit
     info("Committing with message '$conf{'commit-message'}'\n");
-    run_command( "git commit -m \"$conf{'commit-message'}\"",
-        { modifies => 1 } );
+    run_command( "git commit -m \"$conf{'commit-message'}\"", { modifies => 1 } );
 
     if ( $conf{'push'} != 0 ) {
 
@@ -218,24 +213,18 @@ exit;
 
 sub print_configuration {
     print "Configuration after parsing options:\n";
-    printf " path: %s\n",   $conf{'path'};
-    printf " remote: %s\n", $conf{'remote'};
-    printf " database: %s\n",
-        $conf{'database'} ? $conf{'database'} : '<none specified>';
+    printf " path: %s\n",     $conf{'path'};
+    printf " remote: %s\n",   $conf{'remote'};
+    printf " database: %s\n", $conf{'database'} ? $conf{'database'} : '<none specified>';
     printf " database-dir: %s\n",
         $conf{'database-dir'} ? $conf{'database-dir'} : '<none specified>';
-    printf " prefix: %s\n",
-        $conf{'prefix'} ? $conf{'prefix'} : '<none specified>';
+    printf " prefix: %s\n", $conf{'prefix'} ? $conf{'prefix'} : '<none specified>';
     printf " mysql-defaults: %s\n",
-        $conf{'mysql-defaults'}
-        ? $conf{'mysql-defaults'}
-        : '<none specified>';
+        $conf{'mysql-defaults'} ? $conf{'mysql-defaults'} : '<none specified>';
     printf " verbose: %s\n", $conf{'verbose'} ? 'true' : 'false';
     printf " test: %s\n",    $conf{'test'}    ? 'true' : 'false';
     printf " commit-message: '%s'\n",
-        $conf{'commit-message'}
-        ? $conf{'commit-message'}
-        : '<none specified>';
+        $conf{'commit-message'} ? $conf{'commit-message'} : '<none specified>';
 }
 
 sub run_command {
