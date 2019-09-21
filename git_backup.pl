@@ -176,17 +176,17 @@ else {
     foreach my $line ( split( /\n/, $git_status ) ) {
 
         #print "processing $line\n" if $conf{'verbose'};
-        if ( $line =~ /^#\tmodified: +(.*)$/ ) {
+        if ( $line =~ /^\tmodified: +(.*)$/ ) {
             my $file = $1;
             print "Adding modified file: $file\n";
             run_command( "git add \"$file\"", { modifies => 1 } );
         }
-        elsif ( $line =~ /^#\tdeleted: +(.*)$/ ) {
+        elsif ( $line =~ /^\tdeleted: +(.*)$/ ) {
             my $file = $1;
             print "Removing deleted file: $file\n";
             run_command( "git rm \"$file\"", { modifies => 1 } );
         }
-        elsif ( $line =~ /^#\t(.*)$/ ) {
+        elsif ( $line =~ /^\t(.*)$/ ) {
             my $file = $1;
             next if $file =~ /new file/;    # this is already staged
             print "Adding new file: $file\n";
@@ -202,7 +202,7 @@ else {
 
         # then push to the remote
         info("Pushing to backup remote: $conf{'remote'}\n");
-        run_command( "git push $conf{'remote'}", { modifies => 1 } );
+        run_command( "git push $conf{'remote'} master", { modifies => 1 } );
     }
     else {
         info("Commited, but not pushing (push disabled with --nopush.)\n");
